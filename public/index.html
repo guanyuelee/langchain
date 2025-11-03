@@ -138,25 +138,39 @@
     const userInput = document.getElementById('userInput');
     const sendButton = document.getElementById('sendButton');
     
-    // 加入会话
+    // 创建typing-indicator元素
+    const typingIndicator = document.createElement('div');
+    typingIndicator.id = 'typing-indicator';
+    typingIndicator.className = 'loading message bot-message';
+    typingIndicator.textContent = '机器人正在输入...';
+    typingIndicator.style.display = 'none';
+    chatMessages.appendChild(typingIndicator);
+    
+    // 当连接成功时
     socket.on('connect', () => {
+      console.log('已连接到服务器');
       socket.emit('join');
     });
     
-    // 显示机器人消息
-    socket.on('bot_response', (message) => {
-      appendMessage('bot', message);
-      
-      // 移除加载状态
-      const loading = document.querySelector('.loading');
-      if (loading) {
-        loading.remove();
+    // 监听机器人回复
+    socket.on('bot_response', (content) => {
+      appendMessage('bot', content);
+    });
+    
+    // 监听typing状态
+    socket.on('typing', (isTyping) => {
+      if (isTyping) {
+        typingIndicator.style.display = 'block';
+        scrollToBottom();
+      } else {
+        typingIndicator.style.display = 'none';
       }
     });
     
-    // 发送消息函数
+    // 发送消息
     function sendMessage() {
       const message = userInput.value.trim();
+      
       if (message) {
         // 显示用户消息
         appendMessage('user', message);
@@ -164,15 +178,8 @@
         // 发送消息到服务器
         socket.emit('user_message', message);
         
-        // 显示加载状态
-        const loading = document.createElement('div');
-        loading.className = 'loading message bot-message';
-        loading.textContent = '思考中';
-        chatMessages.appendChild(loading);
-        
-        // 清空输入框并滚动到底部
+        // 清空输入框
         userInput.value = '';
-        scrollToBottom();
       }
     }
     
